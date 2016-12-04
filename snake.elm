@@ -7,6 +7,7 @@ import Time exposing (Time)
 import Keyboard exposing (downs, KeyCode)
 import Debug exposing (log)
 import Char
+import Random
 
 main = Html.program
     { init = init
@@ -34,7 +35,8 @@ init =
 -- UPDATE
 type Msg =
     Tick Time |
-    KeyDown KeyCode
+    KeyDown KeyCode |
+    MoveApple Point
 
 stepAngle = 90
 
@@ -47,24 +49,25 @@ update msg model =
                     |> toFloat
                     |> deg2rad
                     |> asVector
-                apple =
+                    |> multiply 5
+                cmd =
                     if
                         collide model.snake model.apple
                     then
-                        { x = 100, y = 200}
+                        Random.generate MoveApple randomPoint
                     else
-                        model.apple
+                        Cmd.none
             in
                 ( { model |
-                    snake = add model.snake goal,
-                    apple = apple
+                    snake = add model.snake goal
                   }
-                , Cmd.none)
+                , cmd)
+
         KeyDown keyCode ->
-            let
-                _ = log "direction" model.direction
-            in
-                move keyCode model
+            move keyCode model
+
+        MoveApple to ->
+            ( { model | apple = to }, Cmd.none)
 
 collide : Point -> Point -> Bool
 collide p1 p2 =
@@ -97,6 +100,19 @@ deg2rad degrees =
 asVector angle =
     { x = cos angle, y = sin angle}
 
+multiply factor point =
+    { x = point.x * factor, y = point.y * factor }
+
+randomPoint: Random.Generator Point
+randomPoint =
+    Random.map (\pair ->
+        { x = fst pair
+        , y = snd pair
+        }) randomPair
+
+randomPair =
+    Random.pair (Random.float 1 300) (Random.float 1 300)
+
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
@@ -126,25 +142,19 @@ fromCode keyCode =
 view : Model -> Html Msg
 view model =
     div []
-        [ div [ style [
-            ("position", "absolute"),
-            ("background-color", "red"),
-            ("transform", "translate(-50%, -50%)"),
-            ("border-radius", "10px"),
-            ("height", "20px"),
-            ("width", "20px"),
-            ("top", toString model.apple.x ++ "px"),
-            ("left", toString model.apple.y ++ "px")
-            ]] [],
-        div [ style [
-            ("position", "absolute"),
-            ("background-color", "blue"),
-            ("transform", "translate(-50%, -50%)"),
-            ("border-radius", "10px"),
-            ("height", "20px"),
-            ("width", "20px"),
-            ("top", toString model.snake.x ++ "px"),
-            ("left", toString model.snake.y ++ "px")
-            ]] []
+        [ circle model.apple "red"
+        , circle model.snake "blue"
         ]
 
+circle: Point -> String -> Html Msg
+circle position color =
+    div [ style [
+        ("position", "absolute"),
+        ("background-color", color),
+        ("transform", "translate(-50%, -50%)"),
+        ("border-radius", "10px"),
+        ("height", "20px"),
+        ("width", "20px"),
+        ("top", toString position.x ++ "px"),
+        ("left", toString position.y ++ "px")
+        ]] []
