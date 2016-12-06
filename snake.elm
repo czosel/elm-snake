@@ -1,8 +1,8 @@
 import Html exposing (Html, Attribute, div, text)
-import Html.App as Html
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 import String
+import Tuple
 import Time exposing (Time)
 import Keyboard exposing (downs, KeyCode)
 import Debug exposing (log)
@@ -106,8 +106,8 @@ multiply factor point =
 randomPoint: Random.Generator Point
 randomPoint =
     Random.map (\pair ->
-        { x = fst pair
-        , y = snd pair
+        { x = Tuple.first pair
+        , y = Tuple.second pair
         }) randomPair
 
 randomPair =
