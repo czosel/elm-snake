@@ -8,6 +8,7 @@ import Keyboard exposing (downs, KeyCode)
 import Debug exposing (log)
 import Char
 import Random
+import Vector exposing (Point, add, distance, deg2rad, asVector, multiply)
 
 main = Html.program
     { init = init
@@ -17,7 +18,6 @@ main = Html.program
     }
 
 -- MODEL
-type alias Point = { x: Float, y: Float }
 type alias Model =
     { apple: Point,
       snake: Point,
@@ -84,24 +84,6 @@ move keyCode model =
             , Cmd.none)
         _ ->
             (model, Cmd.none)
-
-add: Point -> Point -> Point
-add p1 p2 =
-    { x = p1.x + p2.x
-    , y = p1.y + p2.y
-    }
-
-distance p1 p2 =
-    sqrt((p1.x - p2.x)^2 + (p1.y - p2.y)^2)
-
-deg2rad degrees =
-    degrees * 2 * pi / 360
-
-asVector angle =
-    { x = cos angle, y = sin angle}
-
-multiply factor point =
-    { x = point.x * factor, y = point.y * factor }
 
 randomPoint: Random.Generator Point
 randomPoint =
