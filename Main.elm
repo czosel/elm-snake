@@ -21,7 +21,7 @@ main = Html.program
 type alias Model =
     { apple: Point,
       snake: Point,
-      direction: Int
+      direction: Point
     }
 
 init : (Model, Cmd Msg)
@@ -29,7 +29,7 @@ init =
     ( {
         apple = { x=10, y=30 },
         snake = { x=100, y=30 },
-        direction = 0
+        direction = { x=1, y=0 }
     }, Cmd.none)
 
 -- UPDATE
@@ -43,11 +43,8 @@ update msg model =
     case msg of
         Tick newTime ->
             let
-                goal = log "goal" (model.direction % 360
-                    |> toFloat
-                    |> deg2rad
-                    |> angleAsVector
-                    |> multiply 0.5)
+                goal = model.direction
+                    |> multiply 5
                 cmd =
                     if
                         collide model.snake model.apple
@@ -78,11 +75,11 @@ move keyCode model =
         Nothing ->
             (model, Cmd.none)
         Just direction ->
-            case log "length" (length (add direction (angleAsVector (toFloat model.direction)))) of
+            case log "length" (length (add direction (model.direction))) of
                 0 ->
                     (model, Cmd.none)
                 _ ->
-                    ({ model | direction = log "direction" (round (Vector.vectorAsAngle direction)) }
+                    ({ model | direction = log "direction" direction }
                     , Cmd.none)
 
 randomPoint: Random.Generator Point
