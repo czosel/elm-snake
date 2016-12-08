@@ -8,7 +8,7 @@ import Keyboard exposing (downs, KeyCode)
 import Debug exposing (log)
 import Char
 import Random
-import Vector exposing (Point, add, distance, deg2rad, asVector, multiply)
+import Vector exposing (Point, add, distance, deg2rad, angleAsVector, multiply, length)
 
 main = Html.program
     { init = init
@@ -38,18 +38,16 @@ type Msg =
     KeyDown KeyCode |
     MoveApple Point
 
-stepAngle = 90
-
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
         Tick newTime ->
             let
-                goal = model.direction % 360
+                goal = log "goal" (model.direction % 360
                     |> toFloat
                     |> deg2rad
-                    |> asVector
-                    |> multiply 5
+                    |> angleAsVector
+                    |> multiply 0.5)
                 cmd =
                     if
                         collide model.snake model.apple
@@ -74,16 +72,18 @@ collide p1 p2 =
     distance p1 p2 < 20
 
 
+move: Int -> Model -> (Model, Cmd Msg)
 move keyCode model =
     case fromCode keyCode of
-        Left ->
-            ({ model | direction = model.direction + stepAngle }
-            , Cmd.none)
-        Right ->
-            ({ model | direction = model.direction - stepAngle }
-            , Cmd.none)
-        _ ->
+        Nothing ->
             (model, Cmd.none)
+        Just direction ->
+            case log "length" (length (add direction (angleAsVector (toFloat model.direction)))) of
+                0 ->
+                    (model, Cmd.none)
+                _ ->
+                    ({ model | direction = log "direction" (round (Vector.vectorAsAngle direction)) }
+                    , Cmd.none)
 
 randomPoint: Random.Generator Point
 randomPoint =
@@ -104,20 +104,14 @@ subscriptions model =
         , downs KeyDown
         ]
 
-type Key =
-    Left |
-    Right |
-    Other
-
-fromCode : Int -> Key
+fromCode : Int -> Maybe Point
 fromCode keyCode =
     case keyCode of
-        37 ->
-            Left
-        39 ->
-            Right
-        _ ->
-            Other
+        37 -> Just { x=-1, y= 0 }
+        38 -> Just { x= 0, y= 1 }
+        39 -> Just { x= 1, y= 0 }
+        40 -> Just { x= 0, y=-1 }
+        _  -> Nothing
 
 -- VIEW
 
@@ -137,6 +131,6 @@ circle position color =
         ("border-radius", "10px"),
         ("height", "20px"),
         ("width", "20px"),
-        ("top", toString position.x ++ "px"),
-        ("left", toString position.y ++ "px")
+        ("left", toString position.x ++ "px"),
+        ("bottom", toString position.y ++ "px")
         ]] []
