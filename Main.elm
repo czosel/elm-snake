@@ -23,7 +23,8 @@ type alias Model =
     { apple: Point,
       snake: {head: Point,
               tail: List Point},
-      direction: Point
+      direction: Point,
+      alive: Bool
     }
 
 init : (Model, Cmd Msg)
@@ -31,7 +32,8 @@ init =
     ( {
         apple = { x=10, y=30 },
         snake = {head = { x=100, y=30 }, tail=[]},
-        direction = { x=1, y=0 }
+        direction = { x=1, y=0 },
+        alive = True
     }, Cmd.none)
 
 -- UPDATE
@@ -48,9 +50,7 @@ update msg model =
                 goal = model.direction
                     |> multiply 5
                 cmd =
-                    if
-                        collide model.snake.head model.apple
-                    then
+                    if collide model.snake.head model.apple then
                         Random.generate MoveApple randomPoint
                     else
                         Cmd.none
@@ -64,7 +64,8 @@ update msg model =
                                  else
                                     List.take (List.length model.snake.tail)
                                               (model.snake.head :: model.snake.tail)
-                     }
+                     },
+                     alive = not (listCollide model.snake.tail model.snake.head)
                   }
                 , cmd)
 
@@ -128,8 +129,8 @@ view : Model -> Html Msg
 view model =
     div []
         ((circle "red"  model.apple     ) ::
-        ((circle "blue" model.snake.head) ::
-        (List.map (circle "blue") model.snake.tail)))
+        (circle "blue" model.snake.head) ::
+        (List.map (circle "blue") model.snake.tail))
 
 
 circle: String -> Point -> Html Msg
