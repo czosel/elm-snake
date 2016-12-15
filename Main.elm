@@ -8,6 +8,7 @@ import Keyboard exposing (downs, KeyCode)
 import Debug exposing (log)
 import Char
 import Random
+import List
 import Vector exposing (Point, add, distance, deg2rad, angleAsVector, multiply, length)
 
 main = Html.program
@@ -20,7 +21,8 @@ main = Html.program
 -- MODEL
 type alias Model =
     { apple: Point,
-      snake: Point,
+      snake: {head: Point,
+              tail: List Point},
       direction: Point
     }
 
@@ -28,7 +30,7 @@ init : (Model, Cmd Msg)
 init =
     ( {
         apple = { x=10, y=30 },
-        snake = { x=100, y=30 },
+        snake = {head = { x=100, y=30 }, tail=[]},
         direction = { x=1, y=0 }
     }, Cmd.none)
 
@@ -47,14 +49,22 @@ update msg model =
                     |> multiply 5
                 cmd =
                     if
-                        collide model.snake model.apple
+                        collide model.snake.head model.apple
                     then
                         Random.generate MoveApple randomPoint
                     else
                         Cmd.none
             in
                 ( { model |
-                    snake = add model.snake goal
+                    snake = {
+                       head = add model.snake.head goal,
+                       tail = if collide model.snake.head model.apple
+                                 then
+                                    model.snake.head :: model.snake.tail
+                                 else
+                                    List.take (List.length model.snake.tail)
+                                              (model.snake.head :: model.snake.tail)
+                     }
                   }
                 , cmd)
 
@@ -68,6 +78,8 @@ collide : Point -> Point -> Bool
 collide p1 p2 =
     distance p1 p2 < 20
 
+listCollide: List Point -> Point -> Bool
+listCollide l p = List.any (collide p) l
 
 move: Int -> Model -> (Model, Cmd Msg)
 move keyCode model =
@@ -115,12 +127,13 @@ fromCode keyCode =
 view : Model -> Html Msg
 view model =
     div []
-        [ circle model.apple "red"
-        , circle model.snake "blue"
-        ]
+        ((circle "red"  model.apple     ) ::
+        ((circle "blue" model.snake.head) ::
+        (List.map (circle "blue") model.snake.tail)))
 
-circle: Point -> String -> Html Msg
-circle position color =
+
+circle: String -> Point -> Html Msg
+circle color position =
     div [ style [
         ("position", "absolute"),
         ("background-color", color),
